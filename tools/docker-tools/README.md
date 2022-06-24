@@ -50,34 +50,45 @@ To view the site, open a browser to `http://localhost:3000`. The site will auto 
 To build the docker image, first update the VERSION variable below (please use semantic versioning). Add a [release note](#release-notes).
 
 ```
-VERSION="1.0.0"
+VERSION="1.0.1"
 echo $VERSION > ./tools/docker-tools/VERSION
 
-IMAGE="stlab.github.io"
+VOLUME="stlab.github.io"
+
+# Specify the ruby version to match https://pages.github.com/versions/
+# The docker file is currently building from ubuntu:impish instead of latest because
+# past that, Ruby 2.7.3 is not supported. If the ruby requirement is updated, then move to
+# latest.
+
+RUBY_VERSION="2.7.3"
+echo $RUBY_VERSION > ./.ruby-version
 
 # build the base image, no-cache is used so the latest tools are installed
-docker build --no-cache --file ./tools/docker-tools/Dockerfile --target base --tag $IMAGE .
+docker build --build-arg RUBY_VERSION=$RUBY_VERSION --file ./tools/docker-tools/Dockerfile \
+  --target base --tag $VOLUME . \
+  --no-cache 
 
 # update the docs environment
 docker run --mount type=bind,source="$(pwd)",target=/mnt/host \
-    --tty --interactive $IMAGE bash
+    --tty --interactive $VOLUME bash
 
-# from docker prompt (ruby v2.6.6 is needed until Jekyll is updated to 4.1).
 cd /mnt/host
-./tools/docs/update.sh --lock --ruby-version 2.6.6
+./tools/docs/update.sh --lock
 exit
 
 # build the final image
-docker build --file ./tools/docker-tools/Dockerfile --target full --tag $IMAGE .
+docker build --build-arg RUBY_VERSION=$RUBY_VERSION \
+  --file ./tools/docker-tools/Dockerfile --target full --tag $VOLUME .
 
 ```
 
 Test that the new image works (run `prepare.sh` and `start.sh` as above):
 
 ```
+VOLUME="stlab.github.io"
 docker run --mount type=bind,source="$(pwd)",target=/mnt/host \
     --tty --interactive --publish 3000-3001:3000-3001 \
-    $IMAGE bash
+    $VOLUME bash
 ```
 
 If you want to open another terminal on the running image use:
@@ -99,3 +110,4 @@ docker run --mount type=bind,source="$(pwd)",target=/mnt/host \
 ### Release Notes
 
 - 1.0.0 - Initial release for jekyll
+- 1.0.1 - 2022-06-16 update

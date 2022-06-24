@@ -29,3 +29,20 @@ Periodically run `gem update` and `bundle update` to make sure you have the late
 
 ## Building Examples
 1. `./build.sh` will download dependencies, build, and run all the `*.cpp` files in the `libraries` directory.
+
+
+## Running Hyde in Docker
+
+- Build the docker image per the instructions in the hyde repo [link when landed]
+
+```
+docker run --platform linux/x86_64 --mount type=bind,source="$(pwd)/..",target=/mnt/host \
+    --tty --interactive \
+    hyde bash
+```
+
+From the docker prompt
+```
+cd /mnt/host/stlab.github.io
+./generate_docs.sh
+```

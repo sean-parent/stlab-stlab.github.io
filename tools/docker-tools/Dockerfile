@@ -1,10 +1,10 @@
 # Build from the latest ubuntu release
-FROM ubuntu:latest AS base
+FROM ubuntu:impish AS base
 
 # Install items requiring root access
 
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install --no-install-recommends -y \
+RUN apt-get update && apt-get install -y \
     apt-utils \
     fswatch \
     g++ \
@@ -15,8 +15,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     rbenv \
     wget \
     zlib1g-dev \
-    curl \
 && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g n
+RUN n latest
 
 RUN npm install -g npm@latest
 RUN npm install -g browser-sync
@@ -35,9 +37,17 @@ ENV LANGUAGE "en_US.UTF-8"
 RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc
 RUN mkdir -p "$(rbenv root)"/plugins
 RUN git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
-#  Install latest ruby
-RUN rbenv install $(rbenv install -l | grep -v - | tail -1)
-RUN rbenv global  $(rbenv install -l | grep -v - | tail -1)
+
+#  Install ruby
+ARG RUBY_VERSION
+RUN if [ -z ${RUBY_VERSION+x} ]; then \
+      rbenv install $(rbenv install -l | grep -v - | tail -1); \
+      rbenv global  $(rbenv install -l | grep -v - | tail -1); \
+    else \
+      rbenv install $RUBY_VERSION; \
+      rbenv global $RUBY_VERSION; \
+    fi
+
 #  Install bundler in global ruby
 RUN (eval "$(rbenv init -)"; gem install bundler)
 
